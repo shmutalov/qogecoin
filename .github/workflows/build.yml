@@ -5,9 +5,10 @@ on: [push]
 jobs:
   build:
     strategy:
-      matrix: [{platform: ubuntu-latest, os: linux}, {platform: macos-latest, os: macos}, {platform: ubuntu-latest, os: windows}]
+      matrix:
+        runner: [{platform: ubuntu-latest, os: linux}, {platform: macos-latest, os: macos}, {platform: ubuntu-latest, os: windows}]
 
-    runs-on: ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner.platform }}
     steps:
     - uses: actions/checkout@v2
 
