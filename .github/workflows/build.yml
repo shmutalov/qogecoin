@@ -94,7 +94,6 @@ jobs:
     - name: Archive binaries (Linux)
       if: matrix.os == 'linux'
       uses: master-atul/tar-action@v1.0.2
-      id: compress
       with:
         command: c
         files: |
@@ -107,7 +106,6 @@ jobs:
     - name: Archive binaries (Windows)
       if: matrix.os == 'windows'
       uses: master-atul/tar-action@v1.0.2
-      id: compress
       with:
         command: c
         files: |
