@@ -1,30 +1,47 @@
 name: build
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+on: [push]
 
 jobs:
-
   build:
-    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest, ubuntu-latest]
+        os: [linux, macos, windows]
+
+    runs-on: ${{ matrix.platform }}
     steps:
     - uses: actions/checkout@v2
 
-    - name: Install dependencies
+    - name: Install dependencies (Linux)
+      if: matrix.platform == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils
         sudo apt-get install -y libminiupnpc-dev
         sudo apt-get install -y libzmq3-dev
 
-    - name: Install QT5 dependencies
+    - name: Install dependencies (Windows)
+      if: matrix.os == 'windows'
+      run: |
+        sudo apt-get install -y g++-mingw-w64-x86-64 mingw-w64-x86-64-dev
+
+    - name: Install dependencies (MacOS)
+      if: matrix.platform == 'macos-latest'
+      run: |
+        brew install automake libtool --c++11 miniupnpc openssl pkg-config protobuf --c++11 libevent librsvg
+
+    - name: Install QT5 dependencies (Linux)
+      if: matrix.platform == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y libqt5gui5 libqt5core5a libqt5dbus5 qttools5-dev qttools5-dev-tools libprotobuf-dev protobuf-compiler
         sudo apt-get install -y libqrencode-dev
+
+    - name: Install QT5 dependencies (MacOS)
+      if: matrix.platform == 'macos-latest'
+      run: |
+        brew install qt5
 
     - name: Install boost
       uses: MarkusJx/install-boost@v2.0.0
@@ -32,7 +49,8 @@ jobs:
       with:
         boost_version: 1.71.0
 
-    - name: Install BerkeleyDB
+    - name: Install BerkeleyDB (Linux)
+      if: matrix.platform == 'ubuntu-latest'
       run: |
         sudo apt-get install -y software-properties-common
         sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys C70EF1F0305A1ADB9986DBD8D46F45428842CE5E
@@ -40,20 +58,77 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libdb4.8-dev libdb4.8++-dev
 
-    - name: Build
+    - name: Install BerkeleyDB (MacOS)
+      if: matrix.platform == 'macos-latest'
+      run: |
+        brew install berkeley-db4
+
+    - name: Compile
+      if: matrix.os == 'linux' || matrix.os == 'macos'
       env:
         BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
       run: |
         ./autogen.sh
         ./configure --with-boost=${BOOST_ROOT}
         make
+        make check
 
-    - name: Archive production artifacts
-      uses: actions/upload-artifact@v2
+    - name: Compile (Windows)
+      if: matrix.os == 'windows'
+      env:
+        BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
+      run: |
+        cd ./depends
+        make HOST=x86_64-w64-mingw32
+        cd ..
+        ./autogen.sh
+        CONFIG_SITE=$PWD/depends/x86_64-w64-mingw32/share/config.site ./configure --with-boost=${BOOST_ROOT}
+        make
+        make check
+
+    - name: Create DMG
+      if: matrix.platform == 'macos-latest'
+      run: |
+        make deploy
+
+    - name: Archive binaries (Linux)
+      if: matrix.os == 'linux'
+      uses: master-atul/tar-action@v1.0.2
+      id: compress
       with:
-        name: ${{ github.event.repository.name }}-${{ runner.name }}
-        path: |
+        command: c
+        files: |
           ./src/qogecoind
           ./src/qogecoin-cli
           ./src/qogecoin-tx
           ./src/qogecoin-qt
+        outPath: ${{ github.event.repository.name }}-${{ matrix.os }}.tar.gz
+
+    - name: Archive binaries (Windows)
+      if: matrix.os == 'windows'
+      uses: master-atul/tar-action@v1.0.2
+      id: compress
+      with:
+        command: c
+        files: |
+          ./src/qogecoind.exe
+          ./src/qogecoin-cli.exe
+          ./src/qogecoin-tx.exe
+          ./src/qogecoin-qt.exe
+        outPath: ${{ github.event.repository.name }}-${{ matrix.os }}.tar.gz
+
+    - name: Archive production artifacts
+      if: matrix.platform == 'ubuntu-latest'
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ github.event.repository.name }}-${{ matrix.os }}
+        path: |
+          ./${{ github.event.repository.name }}-${{ matrix.os }}.tar.gz
+
+    - name: Archive production artifacts (MacOS)
+      if: matrix.platform == 'macos-latest'
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ github.event.repository.name }}-${{ matrix.os }}
+        path: |
+          ./src/${{ github.event.repository.name }}.dmg
