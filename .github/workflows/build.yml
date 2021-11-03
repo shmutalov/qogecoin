@@ -1,0 +1,59 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils
+        sudo apt-get install -y libminiupnpc-dev
+        sudo apt-get install -y libzmq3-dev
+
+    - name: Install QT5 dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libqt5gui5 libqt5core5a libqt5dbus5 qttools5-dev qttools5-dev-tools libprotobuf-dev protobuf-compiler
+        sudo apt-get install -y libqrencode-dev
+
+    - name: Install boost
+      uses: MarkusJx/install-boost@v2.0.0
+      id: install-boost
+      with:
+        boost_version: 1.71.0
+
+    - name: Install BerkeleyDB
+      run: |
+        sudo apt-get install -y software-properties-common
+        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys C70EF1F0305A1ADB9986DBD8D46F45428842CE5E
+        sudo add-apt-repository "deb http://ppa.launchpad.net/bitcoin/bitcoin/ubuntu bionic main"
+        sudo apt-get update
+        sudo apt-get install -y libdb4.8-dev libdb4.8++-dev
+
+    - name: Build
+      env:
+        BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
+      run: |
+        ./autogen.sh
+        ./configure --with-boost=${BOOST_ROOT}
+        make
+
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ github.event.repository.name }}-${{ runner.name }}
+        path: |
+          ./src/qogecoind
+          ./src/qogecoin-cli
+          ./src/qogecoin-tx
+          ./src/qogecoin-qt

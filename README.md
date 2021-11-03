@@ -6,6 +6,7 @@ Qogecoin Core [QOGE]
 =====================================
 
 [![Build Status](https://travis-ci.org/qogecoin-project/qogecoin.svg?branch=master)](https://travis-ci.org/qogecoin-project/qogecoin)
+[![build](https://github.com/qogecoin/qogecoin/actions/workflows/build.yml/badge.svg)](https://github.com/qogecoin/qogecoin/actions/workflows/build.yml)
 
 Discord------> https://discord.gg/T8uYSDmtde
 
