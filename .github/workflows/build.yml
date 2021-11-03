@@ -5,13 +5,7 @@ on: [push]
 jobs:
   build:
     strategy:
-      matrix:
-        - platform: ubuntu-latest
-        os: linux
-        - platform: macos-latest
-        os: macos
-        - platform: ubuntu-latest
-        os: windows
+      matrix: [{platform: ubuntu-latest, os: linux}, {platform: macos-latest, os: macos}, {platform: ubuntu-latest, os: windows}]
 
     runs-on: ${{ matrix.platform }}
     steps:
