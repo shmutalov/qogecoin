@@ -28,7 +28,7 @@ jobs:
     - name: Install dependencies (MacOS)
       if: matrix.runner.os == 'macos'
       run: |
-        brew install automake libtool --c++11 miniupnpc openssl pkg-config protobuf --c++11 libevent librsvg
+        brew install automake libtool miniupnpc openssl pkg-config protobuf libevent librsvg
 
     - name: Install QT5 dependencies (Linux)
       if: matrix.runner.platform == 'ubuntu-latest'
