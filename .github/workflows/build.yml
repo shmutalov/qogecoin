@@ -6,7 +6,13 @@ jobs:
   build:
     strategy:
       matrix:
-        runner: [{platform: ubuntu-latest, os: linux}, {platform: macos-latest, os: macos}, {platform: ubuntu-latest, os: windows}]
+        runner: 
+          - os: linux
+            platform: ubuntu-latest
+          - os: macos
+            platform: macos-latest
+          # - os: windows
+          #   platform: ubuntu-latest  
 
     runs-on: ${{ matrix.runner.platform }}
     steps:
