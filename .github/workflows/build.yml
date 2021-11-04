@@ -18,6 +18,14 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Set OS limits (MacOS)
+      if: matrix.runner.os == 'macos'
+      run: |
+        sudo sysctl -w kern.maxfiles=64000
+        sudo sysctl -w kern.maxfilesperproc=64000
+        sudo launchctl limit maxfiles 64000 64000
+        sudo ulimit -n 64000
+
     - name: Install dependencies (Linux)
       if: matrix.runner.platform == 'ubuntu-latest'
       run: |
